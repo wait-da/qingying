@@ -1,0 +1,16 @@
+{
+  "name": "轻盈日记",
+  "short_name": "轻盈日记",
+  "description": "记录体重、运动、热量消耗和生理期，每天督促自己。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAF6F7",
+  "theme_color": "#FAF6F7",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

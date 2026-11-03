@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>轻盈日记</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="轻盈日记">
+<meta name="theme-color" content="#FAF6F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161117" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>
+/* Layout: one phone column; a tinted "督促" block leads, plain cards follow; tab bar pinned to the bottom. */
+:root{
+  --bg:#FAF6F7; --surface:#FFFFFF; --surface-2:#F4EDF0; --line:#E8DDE2;
+  --fg:#2A2127; --muted:#7A6B74; --accent:#86385F; --accent-soft:#F3E4EC; --on-accent:#FFFFFF;
+  --period:#CF4469; --period-soft:rgba(207,68,105,.13);
+  --fertile:#6476BF; --fertile-soft:rgba(100,118,191,.13);
+  --move:#3F8159; --move-soft:rgba(63,129,89,.13);
+  --water:#3E8DB8; --warn:#A86B12; --alert:#B8392A;
+  --f-display:"Noto Serif CJK SC","Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --f-body:"PingFang SC","Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei",sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root{
+  --bg:#161117; --surface:#201922; --surface-2:#2A212D; --line:#3A2F3E;
+  --fg:#F2E8EE; --muted:#A8979F; --accent:#E092B8; --accent-soft:#36222F; --on-accent:#1B1219;
+  --period:#F2708F; --period-soft:rgba(242,112,143,.17);
+  --fertile:#9AA8EC; --fertile-soft:rgba(154,168,236,.16);
+  --move:#7CC497; --move-soft:rgba(124,196,151,.15);
+  --water:#72B8DE; --warn:#E3AA52; --alert:#F08470; color-scheme:dark;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
+.app{max-width:660px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(18px + env(safe-area-inset-top,0px)) calc(92px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:24px;line-height:1.3}
+h2{font-size:17px}
+p{margin:0}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.tnum{font-variant-numeric:tabular-nums}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.top .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.streak{display:inline-flex;align-items:baseline;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--muted)}
+.streak b{font-family:var(--f-display);font-size:18px;color:var(--accent)}
+.banner{background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--muted);margin-bottom:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.view{display:grid;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.hero{background:var(--accent-soft);border-color:transparent}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1 1 120px;min-width:0}
+.num{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums}
+.num small{font-family:var(--f-body);font-size:14px;font-weight:400;color:var(--muted);margin-left:3px}
+.in,select.in,textarea.in{font:inherit;font-size:16px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);min-width:0;width:100%}
+textarea.in{resize:vertical;min-height:64px}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;background:var(--accent);color:var(--on-accent);white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.btn.danger{background:var(--alert);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chip.flow[aria-pressed="true"]{background:var(--period);border-color:var(--period)}
+.label{font-size:12px;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;display:block}
+.sep{height:1px;background:var(--line);margin:14px 0}
+.sup{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.ring{width:84px;height:84px}
+.ring .bg{stroke:var(--line);fill:none}
+.ring .fg{stroke:var(--accent);fill:none;stroke-linecap:round;transition:stroke-dashoffset .5s}
+.ring text{fill:var(--fg);font-family:var(--f-display);font-weight:700}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:14px}
+.check{display:flex;align-items:center;gap:6px}
+.box{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--muted);flex:none;display:grid;place-items:center}
+.check.ok .box{background:var(--move);border-color:var(--move)}
+.check.ok .box::after{content:"";width:8px;height:4px;border-left:2px solid var(--surface);border-bottom:2px solid var(--surface);transform:rotate(-45deg) translate(1px,-1px)}
+.check.ok span{color:var(--muted);text-decoration:line-through}
+.nudges{display:grid;gap:10px;margin-top:14px}
+.nudge{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.nudge .d{width:8px;height:8px;border-radius:50%;margin-top:7px;flex:none;background:var(--muted)}
+.nudge.alert .d{background:var(--alert)} .nudge.warn .d{background:var(--warn)}
+.nudge.good .d{background:var(--move)} .nudge.cycle .d{background:var(--period)}
+.datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.datebar .nav{background:none;border:0;width:38px;height:38px;border-radius:50%;font-size:20px;color:var(--accent)}
+.datebar .nav:disabled{color:var(--line);cursor:default}
+.datebar .mid{text-align:center;font-weight:600}
+.datebar .mid .muted{font-weight:400;font-size:12px}
+.linkbtn{background:none;border:0;color:var(--accent);font-size:12px;padding:0;text-decoration:underline}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;background:var(--surface-2);color:var(--muted)}
+.pill.period{background:var(--period-soft);color:var(--period)}
+.pill.fertile{background:var(--fertile-soft);color:var(--fertile)}
+.delta-down{color:var(--move)} .delta-up{color:var(--warn)}
+.exlist{display:grid;gap:6px;margin-bottom:12px}
+.exitem{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:10px;padding:8px 10px;font-size:14px}
+.exitem .t{flex:1;min-width:0}
+.exitem button{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px}
+.exform{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.exform select{grid-column:1/-1}
+@media (min-width:520px){ .exform{grid-template-columns:1.4fr 1fr 1fr auto} .exform select{grid-column:auto} }
+.energy{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px 14px}
+.energy .k{font-size:12px;color:var(--muted)}
+.energy .v{font-family:var(--f-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.cups{display:flex;gap:6px;flex-wrap:wrap}
+.cup{width:30px;height:38px;border:1.5px solid var(--water);border-radius:4px 4px 9px 9px;background:transparent;padding:0;position:relative;overflow:hidden}
+.cup.on{background:var(--water)}
+.cup.on::after{content:"";position:absolute;left:3px;right:3px;top:5px;height:3px;border-radius:2px;background:var(--surface);opacity:.5}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.remrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.remrow:last-of-type{border-bottom:0}
+.remrow .t{font-weight:600}
+.remrow input[type=time]{width:auto}
+.switch{position:relative;width:46px;height:28px;flex:none}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .2s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .2s}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span::after{transform:translateX(18px)}
+.switch input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.stats .k{font-size:12px;color:var(--muted)}
+.stats .v{font-family:var(--f-display);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums}
+.chart{width:100%;min-height:120px}
+.chart svg{display:block;width:100%;height:auto}
+.c-grid{stroke:var(--line);stroke-width:1}
+.c-lab{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.c-band{fill:var(--period-soft)}
+.c-dot{fill:var(--muted);opacity:.55}
+.c-avg{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.c-area{fill:var(--accent);opacity:.08}
+.c-end{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.c-endlab{fill:var(--accent);font-size:12px;font-weight:700;font-family:var(--f-body)}
+.c-tgt{stroke:var(--move);stroke-width:1.5;stroke-dasharray:5 4}
+.c-tgtlab{fill:var(--move);font-size:11px;font-family:var(--f-body)}
+.c-bar{fill:var(--line)} .c-bar.ok{fill:var(--move)}
+.c-pdot{fill:var(--period)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.empty{padding:22px 8px;text-align:center;color:var(--muted);font-size:14px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--muted);font-size:12px;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{text-align:right;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.cyc-big{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.2}
+.cyc-big em{font-style:normal;color:var(--period)}
+.cal-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cal-h button{background:none;border:1px solid var(--line);border-radius:50%;width:34px;height:34px;color:var(--accent);font-size:18px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .wd{font-size:12px;color:var(--muted);padding-bottom:2px}
+.cal .c{aspect-ratio:1;max-width:100%;border-radius:50%;border:1.5px solid transparent;background:none;display:grid;place-items:center;font-size:14px;position:relative;padding:0;font-variant-numeric:tabular-nums}
+.cal .c.fertile{background:var(--fertile-soft);color:var(--fertile)}
+.cal .c.pred{border:1.5px dashed var(--period);color:var(--period)}
+.cal .c.period{background:var(--period);color:#fff}
+.cal .c.today{box-shadow:0 0 0 2px var(--accent)}
+.cal .c.future{opacity:.75;cursor:default}
+.cal .c.ovu::after{content:"";position:absolute;bottom:12%;width:4px;height:4px;border-radius:50%;background:var(--fertile)}
+.cal .c.out{visibility:hidden}
+.hist .r{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.hist .r:last-child{border-bottom:0}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.tabbar .in-w{max-width:660px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{background:none;border:0;display:grid;justify-items:center;gap:2px;padding:4px 0;font-size:12px;color:var(--muted)}
+.tabbar button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-current="page"]{color:var(--accent);font-weight:600}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;z-index:30;max-width:calc(100% - 32px);text-align:center}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1 id="hello">轻盈日记</h1>
+      <div class="sub" id="subline">体重 · 运动 · 消耗 · 生理期</div>
+    </div>
+    <div class="streak" id="streak" hidden></div>
+  </header>
+  <div id="banner"></div>
+  <main id="main"></main>
+</div>
+
+<nav class="tabbar" aria-label="页面">
+  <div class="in-w">
+    <button type="button" data-tab="today"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>今天</button>
+    <button type="button" data-tab="trend"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg>趋势</button>
+    <button type="button" data-tab="cycle"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/></svg>周期</button>
+    <button type="button" data-tab="goals"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8"/></svg>我的</button>
+  </div>
+</nav>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const ds = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const add = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return ds(d); };
+const diff = (a, b) => Math.round((parse(a) - parse(b)) / 86400000);
+const today = () => ds(new Date());
+const WD = '日一二三四五六';
+const md = s => { const d = parse(s); return `${d.getMonth() + 1}月${d.getDate()}日`; };
+const mdShort = s => { const d = parse(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+const numOrNull = v => { const n = parseFloat(String(v ?? '').replace(',', '.')); return isFinite(n) ? n : null; };
+const mondayOf = d => add(d, -((parse(d).getDay() + 6) % 7));
+const isDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const A = null; // iPhone version: everything stays in this phone's browser storage
+
+const EX = [['快走', 4.3], ['跑步', 8], ['跳绳', 11], ['跳操/帕梅拉', 6.5], ['HIIT', 8], ['力量训练', 5], ['瑜伽', 2.5], ['普拉提', 3], ['游泳', 6], ['骑行', 6], ['爬楼梯', 8], ['跳舞', 5], ['羽毛球', 5.5], ['拉伸', 2.3], ['其他', 4]];
+const FLOW = ['无', '少量', '中等', '较多'];
+const SYM = ['痛经', '腰酸', '腹胀', '乳房胀痛', '头痛', '长痘', '嘴馋', '失眠', '疲惫'];
+const MOOD = ['很好', '不错', '一般', '低落', '烦躁'];
+const PHASE = { period: '经期', follicular: '卵泡期', fertile: '易孕期（估算）', luteal: '黄体期', pms: '经前期', late: '月经推迟' };
+const DEF = { name: '', height: null, age: null, startWeight: null, targetWeight: null, targetDate: '', activity: 1.2, exDaysGoal: 4, exMinGoal: 30, waterGoal: 8, cycleLen: 28, periodLen: 5, lastPeriod: '', tone: 'gentle' };
+const REM_DEF = { morningOn: true, morning: '07:30', eveningOn: true, evening: '21:00' };
+
+/* ---------- storage (on this phone) ---------- */
+const Store = {
+  load() {
+    try { const s = A ? A.load() : localStorage.getItem('qingying'); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  },
+  save(obj) {
+    const s = JSON.stringify(obj);
+    try {
+      if (A) { if (!A.save(s)) toast('保存失败，手机存储空间可能不够了'); }
+      else localStorage.setItem('qingying', s);
+    } catch (e) { toast('保存失败了'); }
+  }
+};
+function loadReminders() {
+  try { return { ...REM_DEF, ...(A ? JSON.parse(A.getReminders()) : JSON.parse(localStorage.getItem('qingying-rem') || '{}')) }; } catch (e) { return { ...REM_DEF }; }
+}
+
+/* ---------- state ---------- */
+const saved = Store.load() || {};
+const S = {
+  view: 'today', date: today(), range: 30, cal: today().slice(0, 7),
+  profile: saved.profile || null, days: saved.days || {},
+  rem: loadReminders(), notifOk: true, pendingImport: null,
+  hideInstall: (() => { try { return localStorage.getItem('qingying-hide-install') === '1'; } catch (e) { return false; } })()
+};
+
+const P = () => ({ ...DEF, ...(S.profile || {}) });
+const day = d => S.days[d] || { date: d };
+const exMin = t => (t.ex || []).reduce((a, e) => a + (+e.m || 0), 0);
+const exKcal = t => (t.ex || []).reduce((a, e) => a + (+e.k || 0), 0);
+const logged = t => t.weight != null || exMin(t) > 0 || t.intake != null;
+function latestWeight(upto) {
+  for (let i = 0; i < 180; i++) { const w = S.days[add(upto, -i)]?.weight; if (w != null) return w; }
+  return numOrNull(P().startWeight);
+}
+function avg7(d) {
+  const ws = []; for (let i = 0; i < 7; i++) { const w = S.days[add(d, -i)]?.weight; if (w != null) ws.push(w); }
+  return ws.length ? avg(ws) : null;
+}
+function energy(d) {
+  const p = P(), t = day(d), w = latestWeight(d), h = numOrNull(p.height), a = numOrNull(p.age);
+  const bmr = (w && h && a) ? 10 * w + 6.25 * h - 5 * a - 161 : null;
+  const tdee = bmr ? bmr * (+p.activity || 1.2) : null;
+  const ex = exKcal(t);
+  const total = tdee != null ? tdee + ex : null;
+  const gap = (total != null && t.intake != null) ? total - t.intake : null;
+  return { bmr, tdee, ex, total, gap, intake: t.intake };
+}
+function streak() {
+  let d = today(); if (!logged(day(d))) d = add(d, -1);
+  let n = 0; while (logged(day(d)) && n < 9999) { n++; d = add(d, -1); }
+  return n;
+}
+
+/* ---------- cycle ---------- */
+function cycleInfo() {
+  const p = P();
+  const flowDays = Object.keys(S.days).filter(k => (S.days[k].flow || 0) > 0).sort();
+  const runs = [];
+  for (const k of flowDays) {
+    const r = runs[runs.length - 1];
+    if (r && diff(k, r.end) <= 2) r.end = k; else runs.push({ start: k, end: k });
+  }
+  runs.forEach(r => r.len = diff(r.end, r.start) + 1);
+  const PLdef = +p.periodLen || 5;
+  if (isDate(p.lastPeriod) && !runs.some(r => Math.abs(diff(r.start, p.lastPeriod)) < 10)) {
+    runs.push({ start: p.lastPeriod, end: add(p.lastPeriod, PLdef - 1), len: PLdef, seed: true });
+    runs.sort((a, b) => a.start < b.start ? -1 : 1);
+  }
+  const starts = runs.map(r => r.start);
+  const gaps = [];
+  for (let i = 1; i < starts.length; i++) { const g = diff(starts[i], starts[i - 1]); if (g >= 20 && g <= 45) gaps.push(g); }
+  const rg = gaps.slice(-6);
+  const L = rg.length ? Math.round(avg(rg)) : (+p.cycleLen || 28);
+  const lens = runs.filter(r => !r.seed).map(r => r.len).slice(-6);
+  const PL = lens.length ? Math.round(avg(lens)) : PLdef;
+  return { runs, starts, L, PL, gaps };
+}
+function phaseOn(d, ci) {
+  const last = [...ci.starts].reverse().find(s => s <= d);
+  if (!last) return null;
+  const run = ci.runs.find(r => r.start === last);
+  const n = diff(d, last) + 1;
+  const next = add(last, ci.L);
+  const ovu = add(next, -14);
+  let phase;
+  const flowing = (day(d).flow || 0) > 0;
+  const ongoing = d === today() && n <= ci.PL && diff(d, run.end) === 1;
+  if (flowing || n <= run.len || ongoing) phase = 'period';
+  else if (d > next) phase = 'late';
+  else if (diff(d, ovu) >= -5 && diff(d, ovu) <= 1) phase = 'fertile';
+  else if (diff(next, d) <= 7) phase = 'pms';
+  else if (d < ovu) phase = 'follicular';
+  else phase = 'luteal';
+  return { phase, n, next, ovu, last, late: Math.max(0, diff(d, next)), toNext: diff(next, d) };
+}
+function calMarks(ci) {
+  const m = {}; const put = (k, f) => { (m[k] = m[k] || {})[f] = true; };
+  ci.runs.forEach(r => { for (let i = 0; i < r.len; i++) put(add(r.start, i), 'period'); });
+  const last = ci.starts[ci.starts.length - 1];
+  if (!last) return m;
+  for (let k = 1; k <= 4; k++) {
+    const ps = add(last, ci.L * k), ovu = add(ps, -14);
+    for (let i = -5; i <= 1; i++) put(add(ovu, i), 'fertile');
+    put(ovu, 'ovu');
+    for (let i = 0; i < ci.PL; i++) { const kk = add(ps, i); if (!m[kk]?.period) put(kk, 'pred'); }
+  }
+  return m;
+}
+
+/* ---------- supervision ---------- */
+const exGoalFor = ph => ph?.phase === 'period' ? Math.round((+P().exMinGoal || 30) / 2) : (+P().exMinGoal || 30);
+function checklist(d, ph) {
+  const p = P(), t = day(d), exGoal = exGoalFor(ph);
+  return [
+    { k: '称体重', ok: t.weight != null },
+    { k: `运动 ${exGoal} 分钟`, ok: exMin(t) >= exGoal },
+    { k: `喝水 ${p.waterGoal} 杯`, ok: (t.water || 0) >= (+p.waterGoal || 8) },
+    { k: '记录饮食', ok: t.intake != null }
+  ];
+}
+function nudges(d, ci, ph) {
+  const p = P(), strict = p.tone === 'strict', out = [], t = day(d);
+  const isToday = d === today(), hour = new Date().getHours();
+  const exGoal = exGoalFor(ph);
+
+  let gapW = null; for (let i = 0; i < 60; i++) if (S.days[add(d, -i)]?.weight != null) { gapW = i; break; }
+  if (gapW === null) out.push({ lv: 'warn', tx: '还没有体重记录。早上起床、上完厕所、空腹称一次最准。' });
+  else if (gapW >= 2) out.push({ lv: gapW >= 4 ? 'alert' : 'warn', tx: strict ? `已经 ${gapW} 天没称体重了。不称就看不见变化，明早起床第一件事上秤。` : `有 ${gapW} 天没称体重啦，明早起床后称一下就好。` });
+
+  const mins = exMin(t);
+  if (isToday && mins < exGoal) {
+    if (ph?.phase === 'period') out.push({ lv: 'info', tx: `经期目标减半为 ${exGoal} 分钟。散步、瑜伽、拉伸都可以，肚子疼就休息。` });
+    else if (hour >= 19) out.push({ lv: strict ? 'alert' : 'warn', tx: strict ? `已经 ${hour} 点了，今天还差 ${exGoal - mins} 分钟运动。现在放下手机，跳 15 分钟操。` : `今天还差 ${exGoal - mins} 分钟运动，睡前做 10 分钟拉伸也算数。` });
+    else if (hour >= 12) out.push({ lv: 'info', tx: `今天还差 ${exGoal - mins} 分钟运动，饭后快走 20 分钟就能完成一大半。` });
+  } else if (mins >= exGoal && mins > 0) out.push({ lv: 'good', tx: `运动 ${mins} 分钟，消耗约 ${Math.round(exKcal(t))} kcal，目标完成。` });
+
+  const mon = mondayOf(d), dow = (parse(d).getDay() + 6) % 7;
+  let done = 0; for (let i = 0; i <= dow; i++) if (exMin(day(add(mon, i))) > 0) done++;
+  const goalDays = +p.exDaysGoal || 4, left = 6 - dow + (exMin(t) > 0 ? 0 : 1);
+  if (done >= goalDays) out.push({ lv: 'good', tx: `本周已运动 ${done} 天，周目标 ${goalDays} 天已达成。` });
+  else if (goalDays - done > left) out.push({ lv: 'alert', tx: `本周运动 ${done} 天，目标 ${goalDays} 天，剩下的天数已经不够了。下周从周一开始补上。` });
+  else if (dow >= 3) out.push({ lv: 'warn', tx: `本周运动 ${done}/${goalDays} 天，还剩 ${6 - dow} 天，要抓紧了。` });
+
+  const en = energy(d);
+  if (en.gap != null) {
+    if (en.gap < 0) out.push({ lv: 'warn', tx: `摄入比消耗多 ${Math.round(-en.gap)} kcal。晚饭减掉主食的一半，或者再走 30 分钟。` });
+    else if (en.gap > 1000) out.push({ lv: 'alert', tx: `热量缺口 ${Math.round(en.gap)} kcal，太大了。长期这样容易掉肌肉，也可能让月经推迟，适当多吃一点蛋白质。` });
+    else if (en.gap >= 300) out.push({ lv: 'good', tx: `热量缺口约 ${Math.round(en.gap)} kcal，在 300–800 的健康区间附近。` });
+  }
+
+  const a0 = avg7(d), a1 = avg7(add(d, -7));
+  if (a0 != null && a1 != null) {
+    const ch = a0 - a1;
+    const water = ph && (ph.phase === 'pms' || ph.phase === 'period');
+    if (ch <= -1.2) out.push({ lv: 'warn', tx: `7 日均值一周降了 ${f1(-ch)} kg，速度偏快。每周 0.5–1 kg 更稳，也不容易反弹。` });
+    else if (ch < -0.1) out.push({ lv: 'good', tx: `7 日均值比上周低 ${f1(-ch)} kg，方向是对的。` });
+    else if (ch > 0.3 && water) out.push({ lv: 'cycle', tx: `体重比上周高 ${f1(ch)} kg，现在是${PHASE[ph.phase]}，多半是水分，经期结束后一般会回落。` });
+    else if (ch > 0.3) out.push({ lv: strict ? 'alert' : 'warn', tx: strict ? `7 日均值比上周涨了 ${f1(ch)} kg。看一下这周的饮食记录，找出多吃的那一顿。` : `7 日均值比上周高 ${f1(ch)} kg，这周留意一下晚饭和零食。` });
+  }
+
+  if (ph) {
+    if (ph.phase === 'period') out.push({ lv: 'cycle', tx: `经期第 ${ph.n} 天。多喝温水，注意保暖，体重先别太在意。` });
+    else if (ph.phase === 'pms') out.push({ lv: 'cycle', tx: `距离下次月经约 ${ph.toNext} 天。经前容易水肿、嘴馋，体重涨 0.5–2 kg 属正常，看 7 日均值就好。` });
+    else if (ph.phase === 'follicular') out.push({ lv: 'cycle', tx: '卵泡期，体力和状态通常比较好，适合安排力量训练或提高强度。' });
+    else if (ph.phase === 'late') out.push({ lv: ph.late >= 7 ? 'warn' : 'cycle', tx: ph.late >= 7 ? `月经已推迟 ${ph.late} 天。如果持续推迟或身体不舒服，建议去医院看看。` : `月经比预计晚了 ${ph.late} 天，偶尔推迟几天很常见。来了记得在下面记录。` });
+    else if (ph.phase === 'fertile') out.push({ lv: 'cycle', tx: '处于估算的易孕期（只是根据周期推算，不能用来避孕）。' });
+  } else out.push({ lv: 'info', tx: '还没有生理期信息。在下方记录经量，或在「我的」里填上次月经开始日，就能预测周期。' });
+
+  if (isToday && hour >= 15 && (t.water || 0) < (+p.waterGoal || 8) / 2) out.push({ lv: 'warn', tx: `已经下午了，才喝了 ${t.water || 0} 杯水。现在去接一杯。` });
+
+  const st = streak();
+  if (st >= 3) out.push({ lv: 'good', tx: `已经连续记录 ${st} 天，坚持住。` });
+
+  const order = { alert: 0, warn: 1, cycle: 2, info: 3, good: 4 };
+  return out.sort((a, b) => order[a.lv] - order[b.lv]);
+}
+
+/* ---------- persistence ---------- */
+function persist() {
+  Store.save({ v: 1, profile: S.profile, days: S.days });
+  pushStatus();
+}
+// Hands today's status to the phone so the reminder can say what is still missing.
+function pushStatus() {
+  if (!A) return;
+  try {
+    const d = today(), t = day(d), p = P(), ci = cycleInfo(), ph = phaseOn(d, ci);
+    const last = ci.starts[ci.starts.length - 1] || '';
+    A.setStatus(JSON.stringify({
+      date: d, name: p.name || '', tone: p.tone, weighed: t.weight != null,
+      exMin: exMin(t), exGoal: exGoalFor(ph), water: t.water || 0, waterGoal: +p.waterGoal || 8, intake: t.intake != null,
+      lastStart: last, pl: ci.PL, next: last ? add(last, ci.L) : ''
+    }));
+  } catch (e) {}
+}
+function saveDay(d, patch) {
+  S.days = { ...S.days, [d]: { ...day(d), ...patch, date: d } };
+  persist(); render();
+}
+function saveProfile(patch) {
+  S.profile = { ...P(), ...patch };
+  persist(); render();
+}
+let toastT;
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2400); }
+
+/* ---------- render ---------- */
+function render() {
+  document.querySelectorAll('.tabbar button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === S.view ? 'page' : 'false'));
+  const p = P(), h = new Date().getHours();
+  const hi = h < 11 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好';
+  $('#hello').textContent = p.name ? `${hi}，${p.name}` : '轻盈日记';
+  const now = new Date();
+  $('#subline').textContent = `${now.getMonth() + 1}月${now.getDate()}日 周${WD[now.getDay()]} · 体重 · 运动 · 消耗 · 生理期`;
+  const st = streak(); const se = $('#streak');
+  se.hidden = st < 1; se.innerHTML = `连续记录 <b>${st}</b> 天`;
+  const standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  $('#banner').innerHTML = (!standalone && !S.hideInstall)
+    ? `<div class="banner"><span>先装到桌面再开始记录：点 Safari 底部的「分享」，选「添加到主屏幕」。之后从桌面图标打开，断网也能用。在 Safari 里记的数据不会带到桌面 App 里。</span><button type="button" class="btn small ghost" data-act="hideInstall">知道了</button></div>` : '';
+  const main = $('#main');
+  main.innerHTML = `<div class="view">${({ today: vToday, trend: vTrend, cycle: vCycle, goals: vGoals })[S.view]()}</div>`;
+  if (S.view === 'trend') { drawWeight(); drawExercise(); }
+  if (S.view === 'today') updateEst();
+}
+
+function vToday() {
+  const d = S.date, t = day(d), p = P(), isToday = d === today();
+  const ci = cycleInfo(), ph = phaseOn(d, ci);
+  let html = '';
+
+  if (!S.profile) html += onboarding();
+  else {
+    const cl = checklist(d, ph), done = cl.filter(c => c.ok).length, C = 2 * Math.PI * 34;
+    html += `<section class="card hero" aria-label="今日督促">
+      <div class="card-h"><h2>${isToday ? '今日督促' : md(d) + ' 的完成情况'}</h2>${ph ? `<span class="pill ${ph.phase === 'period' || ph.phase === 'pms' || ph.phase === 'late' ? 'period' : ph.phase === 'fertile' ? 'fertile' : ''}">${PHASE[ph.phase]}${ph.phase === 'period' ? ' 第 ' + ph.n + ' 天' : ''}</span>` : ''}</div>
+      <div class="sup">
+        <svg class="ring" viewBox="0 0 84 84" role="img" aria-label="完成 ${done} / ${cl.length}"><circle class="bg" cx="42" cy="42" r="34" stroke-width="7"/><circle class="fg" cx="42" cy="42" r="34" stroke-width="7" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - done / cl.length)}" transform="rotate(-90 42 42)"/><text x="42" y="48" text-anchor="middle" font-size="20">${done}/${cl.length}</text></svg>
+        <div class="checks">${cl.map(c => `<div class="check ${c.ok ? 'ok' : ''}"><i class="box"></i><span>${c.k}</span></div>`).join('')}</div>
+      </div>
+      <div class="nudges">${nudges(d, ci, ph).slice(0, 5).map(n => `<div class="nudge ${n.lv}"><i class="d"></i><p>${esc(n.tx)}</p></div>`).join('')}</div>
+    </section>`;
+  }
+
+  html += `<div class="datebar"><button type="button" class="nav" data-act="prev" aria-label="前一天">‹</button>
+    <div class="mid">${md(d)} 周${WD[parse(d).getDay()]}<div class="muted">${isToday ? '今天' : `<button type="button" class="linkbtn" data-act="gotoday">回到今天</button>`}</div></div>
+    <button type="button" class="nav" data-act="next" aria-label="后一天" ${isToday ? 'disabled' : ''}>›</button></div>`;
+
+  const yW = (() => { for (let i = 1; i < 30; i++) { const w = S.days[add(d, -i)]?.weight; if (w != null) return w; } return null; })();
+  const a7 = avg7(d), hgt = numOrNull(p.height), wNow = t.weight ?? null;
+  let dl = '';
+  if (wNow != null && yW != null) { const dd = wNow - yW; dl = `<span class="${dd <= 0 ? 'delta-down' : 'delta-up'}">${dd <= 0 ? '↓' : '↑'} ${f1(Math.abs(dd))} kg</span> 比上次`; }
+  const wRef = wNow ?? latestWeight(d);
+  const bmi = wRef && hgt ? wRef / ((hgt / 100) ** 2) : null;
+  html += `<section class="card"><div class="card-h"><h2>体重</h2><span class="muted small">${a7 != null ? '7 日均值 ' + f1(a7) + ' kg' : ''}${bmi ? ' · BMI ' + f1(bmi) : ''}</span></div>
+    <div class="row" style="align-items:flex-end;justify-content:space-between">
+      <div><div class="num">${wNow != null ? f1(wNow) : '--'}<small>kg</small></div><div class="small muted" style="margin-top:4px">${dl || (wNow == null ? '晨起空腹称重最准' : '')}</div></div>
+      <div class="row" style="flex:0 1 230px"><input class="in grow" id="wIn" type="number" inputmode="decimal" step="0.1" min="25" max="250" placeholder="${f1(latestWeight(d) || 55)}" value="${wNow ?? ''}" aria-label="体重（kg）"><button type="button" class="btn" data-act="saveW">记录</button></div>
+    </div></section>`;
+
+  const exs = t.ex || [];
+  html += `<section class="card"><div class="card-h"><h2>运动</h2><span class="muted small tnum">${exMin(t)} 分钟 · ${Math.round(exKcal(t))} kcal</span></div>
+    ${exs.length ? `<div class="exlist">${exs.map((e, i) => `<div class="exitem"><span class="t">${esc(e.t)}</span><span class="tnum muted">${e.m} 分钟</span><span class="tnum">${Math.round(e.k)} kcal</span><button type="button" data-act="delEx" data-i="${i}" aria-label="删除 ${esc(e.t)}">×</button></div>`).join('')}</div>` : `<p class="muted small" style="margin-bottom:12px">${isToday ? '今天还没有运动记录。' : '这天没有运动记录。'}</p>`}
+    <div class="exform">
+      <select class="in" id="exT" aria-label="运动类型">${EX.map(([n]) => `<option>${n}</option>`).join('')}</select>
+      <input class="in" id="exM" type="number" inputmode="numeric" min="1" max="600" placeholder="分钟" aria-label="分钟">
+      <input class="in" id="exK" type="number" inputmode="numeric" min="0" max="5000" placeholder="kcal" aria-label="消耗 kcal（留空自动估算）">
+      <button type="button" class="btn" data-act="addEx">添加</button>
+    </div>
+    <p class="small muted" style="margin-top:8px" id="exEst">消耗留空会按运动强度和你的体重自动估算。</p></section>`;
+
+  const en = energy(d);
+  html += `<section class="card"><div class="card-h"><h2>热量消耗</h2><span class="muted small">${en.gap != null ? (en.gap >= 0 ? '缺口 ' : '超出 ') + Math.abs(Math.round(en.gap)) + ' kcal' : ''}</span></div>
+    ${en.bmr ? `<div class="energy">
+      <div><div class="k">基础代谢</div><div class="v">${Math.round(en.bmr)}</div></div>
+      <div><div class="k">日常消耗（含基础）</div><div class="v">${Math.round(en.tdee)}</div></div>
+      <div><div class="k">运动消耗</div><div class="v">${Math.round(en.ex)}</div></div>
+      <div><div class="k">总消耗</div><div class="v" style="color:var(--accent)">${Math.round(en.total)}</div></div>
+    </div>` : `<p class="muted small">在「我的」里填上身高和年龄，就能算出每天的基础代谢和总消耗。</p>`}
+    <div class="sep"></div>
+    <label class="label" for="inIn">饮食摄入（kcal）</label>
+    <div class="row"><input class="in grow" id="inIn" type="number" inputmode="numeric" min="0" max="8000" placeholder="例如 1500" value="${t.intake ?? ''}"><button type="button" class="btn" data-act="saveIn">保存</button></div>
+    ${en.bmr ? `<p class="small muted" style="margin-top:8px">建议每天摄入 ${Math.max(1200, Math.round(en.tdee - 500))}–${Math.max(1200, Math.round(en.tdee - 300))} kcal 左右，不要低于 1200。</p>` : ''}</section>`;
+
+  const wg = +p.waterGoal || 8, wc = t.water || 0;
+  html += `<section class="card"><div class="card-h"><h2>喝水</h2><span class="muted small tnum">${wc} / ${wg} 杯（每杯约 250 ml）</span></div>
+    <div class="cups">${Array.from({ length: Math.max(wg, wc) }, (_, i) => `<button type="button" class="cup ${i < wc ? 'on' : ''}" data-act="water" data-n="${i + 1}" aria-label="喝了 ${i + 1} 杯" aria-pressed="${i < wc}"></button>`).join('')}</div></section>`;
+
+  const sym = t.sym || [];
+  html += `<section class="card"><div class="card-h"><h2>生理期与身体</h2>${ph ? `<span class="muted small">${ph.phase === 'period' ? '经期第 ' + ph.n + ' 天' : ph.phase === 'late' ? '推迟 ' + ph.late + ' 天' : '距下次约 ' + ph.toNext + ' 天'}</span>` : ''}</div>
+    <span class="label">经量</span>
+    <div class="chips" role="group" aria-label="经量">${FLOW.map((f, i) => `<button type="button" class="chip flow" data-act="flow" data-v="${i}" aria-pressed="${(t.flow || 0) === i}">${f}</button>`).join('')}</div>
+    <span class="label" style="margin-top:14px">身体感觉</span>
+    <div class="chips">${SYM.map(s => `<button type="button" class="chip" data-act="sym" data-v="${s}" aria-pressed="${sym.includes(s)}">${s}</button>`).join('')}</div>
+    <span class="label" style="margin-top:14px">心情</span>
+    <div class="chips">${MOOD.map(m => `<button type="button" class="chip" data-act="mood" data-v="${m}" aria-pressed="${t.mood === m}">${m}</button>`).join('')}</div>
+    <label class="label" for="noteIn" style="margin-top:14px">备注</label>
+    <textarea class="in" id="noteIn" placeholder="吃了什么、睡得怎样、想对自己说的话">${esc(t.note || '')}</textarea></section>`;
+  return html;
+}
+
+function onboarding() {
+  return `<section class="card hero"><div class="card-h"><h2>先认识一下你</h2><span class="muted small">填完就能开始督促</span></div>
+    <p class="small muted" style="margin-bottom:14px">所有记录只保存在这台手机里，不会上传。用来计算每天消耗和预测生理期。</p>
+    <div class="form">
+      <div><label class="label" for="obName">怎么称呼你</label><input class="in" id="obName" placeholder="例如 小雨"></div>
+      <div><label class="label" for="obH">身高（cm）</label><input class="in" id="obH" type="number" inputmode="decimal" placeholder="163"></div>
+      <div><label class="label" for="obA">年龄</label><input class="in" id="obA" type="number" inputmode="numeric" placeholder="26"></div>
+      <div><label class="label" for="obW">现在体重（kg）</label><input class="in" id="obW" type="number" inputmode="decimal" step="0.1" placeholder="58.5"></div>
+      <div><label class="label" for="obT">目标体重（kg）</label><input class="in" id="obT" type="number" inputmode="decimal" step="0.1" placeholder="53"></div>
+      <div><label class="label" for="obP">上次月经开始日</label><input class="in" id="obP" type="date" max="${today()}"></div>
+    </div>
+    <div class="row" style="margin-top:14px"><button type="button" class="btn" data-act="onboard">开始记录</button><span class="small muted">之后可以在「我的」里修改</span></div></section>`;
+}
+
+function vTrend() {
+  const p = P(), cur = avg7(today()) ?? latestWeight(today());
+  const sw = numOrNull(p.startWeight), tw = numOrNull(p.targetWeight), hgt = numOrNull(p.height);
+  const ch = cur != null && sw != null ? cur - sw : null;
+  const rem = cur != null && tw != null ? cur - tw : null;
+  let pace = '';
+  if (rem != null && rem > 0 && isDate(p.targetDate)) { const wk = diff(p.targetDate, today()) / 7; if (wk > 0) pace = `每周需减 ${f1(rem / wk)} kg`; }
+  return `<section class="card"><div class="stats">
+      <div><div class="k">当前（7 日均值）</div><div class="v">${cur != null ? f1(cur) : '--'} <span class="small muted">kg</span></div></div>
+      <div><div class="k">累计变化</div><div class="v ${ch != null && ch <= 0 ? 'delta-down' : ch != null ? 'delta-up' : ''}">${ch != null ? (ch <= 0 ? '−' : '+') + f1(Math.abs(ch)) : '--'} <span class="small muted">kg</span></div></div>
+      <div><div class="k">距离目标</div><div class="v">${rem != null ? (rem > 0 ? f1(rem) : '已达成') : '--'} ${rem != null && rem > 0 ? '<span class="small muted">kg</span>' : ''}</div>${pace ? `<div class="small muted">${pace}</div>` : ''}</div>
+      <div><div class="k">BMI</div><div class="v">${cur && hgt ? f1(cur / ((hgt / 100) ** 2)) : '--'}</div><div class="small muted">18.5–23.9 为正常</div></div>
+    </div></section>
+    <section class="card"><div class="card-h"><h2>体重曲线</h2>
+      <div class="seg" role="group" aria-label="时间范围">${[14, 30, 90].map(r => `<button type="button" data-act="range" data-v="${r}" aria-pressed="${S.range === r}">${r} 天</button>`).join('')}</div></div>
+      <div class="chart" id="wchart"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>7 日均值</span><span><i style="background:var(--muted);opacity:.55;border-radius:50%"></i>每日称重</span><span><i style="background:var(--period-soft)"></i>经期</span>${tw ? '<span><i style="background:var(--move);height:2px;vertical-align:3px"></i>目标</span>' : ''}</div>
+      <p class="small muted" style="margin-top:8px">每天的体重会因水分、经期上下波动 1–2 kg，看紫色的 7 日均值线判断趋势。</p></section>
+    <section class="card"><div class="card-h"><h2>运动分钟</h2><span class="muted small">绿色 = 达到每日 ${p.exMinGoal} 分钟</span></div><div class="chart" id="xchart"></div></section>
+    <section class="card"><div class="card-h"><h2>每周汇总</h2></div><div class="tablewrap">${weekTable()}</div></section>`;
+}
+function weekTable() {
+  const rows = []; let mon = mondayOf(today());
+  for (let w = 0; w < 8; w++) {
+    let ws = [], exd = 0, mins = 0, kc = 0;
+    for (let i = 0; i < 7; i++) { const d = add(mon, i); if (d > today()) break; const t = day(d); if (t.weight != null) ws.push(t.weight); if (exMin(t) > 0) exd++; mins += exMin(t); kc += exKcal(t); }
+    rows.push(`<tr><td>${mdShort(mon)} 起${w === 0 ? '（本周）' : ''}</td><td>${ws.length ? f1(avg(ws)) : '–'}</td><td>${exd}</td><td>${mins}</td><td>${Math.round(kc)}</td></tr>`);
+    mon = add(mon, -7);
+  }
+  return `<table><thead><tr><th>周</th><th>平均体重</th><th>运动天数</th><th>分钟</th><th>运动消耗 kcal</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+function drawWeight() {
+  const box = $('#wchart'); if (!box) return;
+  const range = S.range, W = Math.max(280, Math.round(box.clientWidth || 600)), H = W < 420 ? 200 : 240;
+  const m = { l: 34, r: 46, t: 14, b: 24 };
+  const end = today(), dates = Array.from({ length: range }, (_, i) => add(end, i - range + 1));
+  const pts = dates.map((d, i) => ({ i, d, w: S.days[d]?.weight ?? null, a: avg7(d), f: (S.days[d]?.flow || 0) > 0 }));
+  const ws = pts.filter(p => p.w != null);
+  if (ws.length < 2) { box.innerHTML = `<div class="empty">记录 2 天以上的体重后，这里会画出你的体重曲线和 7 日均值。</div>`; return; }
+  const tgt = numOrNull(P().targetWeight);
+  let lo = Math.min(...ws.map(p => p.w)), hi = Math.max(...ws.map(p => p.w));
+  const showT = tgt != null && tgt >= lo - 3 && tgt <= hi + 3;
+  if (showT) { lo = Math.min(lo, tgt); hi = Math.max(hi, tgt); }
+  const pv = Math.max(0.4, (hi - lo) * 0.12); lo -= pv; hi += pv;
+  const step = [0.2, 0.5, 1, 2, 5, 10].find(s => (hi - lo) / s <= 5) || 10;
+  const x = i => m.l + (W - m.l - m.r) * (i / (range - 1)), y = v => m.t + (H - m.t - m.b) * (1 - (v - lo) / (hi - lo));
+  const bw = (W - m.l - m.r) / (range - 1);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="最近 ${range} 天体重曲线">`;
+  pts.filter(p => p.f).forEach(p => s += `<rect class="c-band" x="${Math.max(m.l, x(p.i) - bw / 2)}" y="${m.t}" width="${bw}" height="${H - m.t - m.b}"/>`);
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+    const yy = y(v); s += `<line class="c-grid" x1="${m.l}" x2="${W - m.r}" y1="${yy}" y2="${yy}"/><text class="c-lab" x="${m.l - 6}" y="${yy + 4}" text-anchor="end">${step < 1 ? v.toFixed(1) : Math.round(v)}</text>`;
+  }
+  if (showT) { const yy = y(tgt); s += `<line class="c-tgt" x1="${m.l}" x2="${W - m.r}" y1="${yy}" y2="${yy}"/><text class="c-tgtlab" x="${W - m.r + 4}" y="${yy + 4}">目标</text>`; }
+  ws.forEach(p => s += `<circle class="c-dot" cx="${x(p.i)}" cy="${y(p.w)}" r="${range > 60 ? 2 : 3}"/>`);
+  const ap = pts.filter(p => p.a != null);
+  if (ap.length) {
+    const line = ap.map((p, k) => `${k ? 'L' : 'M'}${x(p.i).toFixed(1)},${y(p.a).toFixed(1)}`).join('');
+    s += `<path class="c-area" d="${line}L${x(ap[ap.length - 1].i)},${H - m.b}L${x(ap[0].i)},${H - m.b}Z"/><path class="c-avg" d="${line}"/>`;
+    const e = ap[ap.length - 1];
+    s += `<circle class="c-end" cx="${x(e.i)}" cy="${y(e.a)}" r="4.5"/><text class="c-endlab" x="${x(e.i) + 7}" y="${y(e.a) + (showT && Math.abs(y(e.a) - y(tgt)) < 14 ? -8 : 4)}">${f1(e.a)}</text>`;
+  }
+  [0, Math.floor((range - 1) / 2), range - 1].forEach((i, k) => s += `<text class="c-lab" x="${x(i)}" y="${H - 6}" text-anchor="${k === 0 ? 'start' : k === 2 ? 'end' : 'middle'}">${mdShort(dates[i])}</text>`);
+  box.innerHTML = s + '</svg>';
+}
+function drawExercise() {
+  const box = $('#xchart'); if (!box) return;
+  const range = Math.min(S.range, 30), W = Math.max(280, Math.round(box.clientWidth || 600)), H = 150, m = { l: 34, r: 10, t: 10, b: 30 };
+  const goal = +P().exMinGoal || 30;
+  const dates = Array.from({ length: range }, (_, i) => add(today(), i - range + 1));
+  const vals = dates.map(d => exMin(day(d)));
+  if (!vals.some(v => v > 0)) { box.innerHTML = `<div class="empty">在「今天」里添加运动后，这里会显示每天的运动分钟。</div>`; return; }
+  const max = Math.max(goal * 1.3, ...vals), cw = (W - m.l - m.r) / range, bw = Math.max(3, cw * 0.62);
+  const y = v => m.t + (H - m.t - m.b) * (1 - v / max);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="最近 ${range} 天运动分钟">`;
+  [0, goal].forEach(v => s += `<line class="${v ? 'c-tgt' : 'c-grid'}" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="c-lab" x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`);
+  vals.forEach((v, i) => {
+    const xx = m.l + cw * i + (cw - bw) / 2;
+    if (v > 0) s += `<rect class="c-bar ${v >= goal ? 'ok' : ''}" x="${xx}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" rx="2"/>`;
+    if ((day(dates[i]).flow || 0) > 0) s += `<circle class="c-pdot" cx="${xx + bw / 2}" cy="${H - m.b + 7}" r="2.5"/>`;
+  });
+  [0, range - 1].forEach((i, k) => s += `<text class="c-lab" x="${m.l + cw * i + cw / 2}" y="${H - 4}" text-anchor="${k ? 'end' : 'start'}">${mdShort(dates[i])}</text>`);
+  box.innerHTML = s + '</svg>';
+}
+
+function vCycle() {
+  const ci = cycleInfo(), ph = phaseOn(today(), ci), marks = calMarks(ci);
+  let hero;
+  if (!ph) hero = `<div class="cyc-big">还没有经期记录</div><p class="muted small" style="margin-top:6px">月经来的那天，在「今天」页把经量选成「少量 / 中等 / 较多」，或者点下面的按钮。也可以在「我的」里填上次开始日。</p>`;
+  else {
+    const big = ph.phase === 'period' ? `经期第 <em>${ph.n}</em> 天` : ph.phase === 'late' ? `已推迟 <em>${ph.late}</em> 天` : ph.toNext === 0 ? '预计<em>今天</em>来' : `距下次约 <em>${ph.toNext}</em> 天`;
+    hero = `<div class="cyc-big">${big}</div><p class="muted small" style="margin-top:6px">当前：${PHASE[ph.phase]} · 预计下次 ${md(ph.next)} · 平均周期 ${ci.L} 天 · 经期约 ${ci.PL} 天</p>`;
+  }
+  const t = day(today());
+  const btn = (t.flow || 0) > 0 ? `<button type="button" class="btn ghost" data-act="tab" data-tab="today">在「今天」修改经量和症状</button>` : `<button type="button" class="btn" data-act="periodStart">今天来月经了</button>`;
+
+  const [cy, cm] = S.cal.split('-').map(Number);
+  const first = new Date(cy, cm - 1, 1), lead = first.getDay(), dim = new Date(cy, cm, 0).getDate();
+  let cells = WD.split('').map(w => `<div class="wd">${w}</div>`).join('');
+  for (let i = 0; i < lead; i++) cells += `<div class="c out"></div>`;
+  for (let i = 1; i <= dim; i++) {
+    const d = `${cy}-${pad(cm)}-${pad(i)}`, mk = marks[d] || {}, fut = d > today();
+    const cls = ['c', mk.period ? 'period' : mk.pred ? 'pred' : mk.fertile ? 'fertile' : '', mk.ovu && !mk.period ? 'ovu' : '', d === today() ? 'today' : '', fut ? 'future' : ''].join(' ');
+    cells += `<button type="button" class="${cls}" ${fut ? 'disabled' : `data-act="calDay" data-d="${d}"`} aria-label="${md(d)}${mk.period ? ' 经期' : mk.pred ? ' 预测经期' : mk.fertile ? ' 易孕期' : ''}">${i}</button>`;
+  }
+  const hist = [...ci.runs].reverse().slice(0, 8).map((r, k, arr) => {
+    const prev = arr[k + 1]; const cl = prev ? diff(r.start, prev.start) : null;
+    return `<div class="r"><span>${md(r.start)} 开始${r.seed ? ' <span class="pill">设置时填写</span>' : ''}</span><span class="muted tnum">经期 ${r.len} 天${cl ? ' · 周期 ' + cl + ' 天' : ''}</span></div>`;
+  }).join('');
+  return `<section class="card hero">${hero}<div class="row" style="margin-top:14px">${btn}</div></section>
+    <section class="card"><div class="cal-h"><button type="button" data-act="calPrev" aria-label="上个月">‹</button><h2>${cy} 年 ${cm} 月</h2><button type="button" data-act="calNext" aria-label="下个月">›</button></div>
+      <div class="cal">${cells}</div>
+      <div class="legend"><span><i style="background:var(--period)"></i>经期（已记录）</span><span><i style="border:1.5px dashed var(--period)"></i>预测经期</span><span><i style="background:var(--fertile-soft)"></i>易孕期（估算）</span><span><i style="background:var(--fertile);border-radius:50%;width:5px;height:5px"></i>排卵日（估算）</span></div>
+      <p class="small muted" style="margin-top:8px">点日期可以补记那天的数据。预测按你最近的周期推算，仅供参考，不能用于避孕。</p></section>
+    <section class="card"><div class="card-h"><h2>周期记录</h2><span class="muted small">${ci.gaps.length ? '最近周期 ' + ci.gaps.slice(-6).join('、') + ' 天' : ''}</span></div>
+      ${hist ? `<div class="hist">${hist}</div>` : '<p class="empty">记录两次月经后，这里会算出你的真实周期长度。</p>'}</section>`;
+}
+
+function vGoals() {
+  const p = P(), r = S.rem;
+  const f = (id, label, val, attrs = '') => `<div><label class="label" for="${id}">${label}</label><input class="in" id="${id}" value="${esc(val ?? '')}" ${attrs}></div>`;
+  const imp = S.pendingImport;
+  return `<section class="card"><div class="card-h"><h2>每日提醒</h2><span class="muted small">用 iPhone 自带的日历来提醒</span></div>
+      <div class="remrow"><div><div class="t">早上称体重</div><div class="small muted">起床后空腹称</div></div>
+        <div class="row"><input class="in" id="rMt" type="time" value="${esc(r.morning)}" aria-label="早上提醒时间"><label class="switch"><input type="checkbox" id="rMo" ${r.morningOn ? 'checked' : ''} aria-label="加入早上提醒"><span></span></label></div></div>
+      <div class="remrow"><div><div class="t">晚上打卡</div><div class="small muted">记运动、饮食、喝水、经期</div></div>
+        <div class="row"><input class="in" id="rEt" type="time" value="${esc(r.evening)}" aria-label="晚上提醒时间"><label class="switch"><input type="checkbox" id="rEo" ${r.eveningOn ? 'checked' : ''} aria-label="加入晚上提醒"><span></span></label></div></div>
+      <div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="addCal">添加到 iPhone 日历</button></div>
+      <p class="small muted" style="margin-top:10px">点按钮后选「全部添加」，日历每天到点会响铃提醒，断网也有效。改时间的话，先到日历里删掉旧的那组，再点一次。</p>
+      <p class="small muted" style="margin-top:6px">点了没反应的话，用默认时间（早 7:30、晚 21:00）：<a href="reminders.ics" style="color:var(--accent)">添加默认提醒</a>。也可以在「提醒事项」App 里自己建，把「重复」设为「每天」。</p></section>
+    <section class="card"><div class="card-h"><h2>我的资料</h2></div><div class="form">
+      ${f('gName', '称呼', p.name, 'placeholder="小雨"')}
+      ${f('gH', '身高（cm）', p.height, 'type="number" inputmode="decimal"')}
+      ${f('gA', '年龄', p.age, 'type="number" inputmode="numeric"')}
+      <div><label class="label" for="gAct">日常活动量</label><select class="in" id="gAct">${[[1.2, '久坐（上班族）'], [1.375, '轻度（每天走动较多）'], [1.55, '中度（体力工作）']].map(([v, l]) => `<option value="${v}" ${+p.activity === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    </div></section>
+    <section class="card"><div class="card-h"><h2>减重目标</h2></div><div class="form">
+      ${f('gSW', '起始体重（kg）', p.startWeight, 'type="number" inputmode="decimal" step="0.1"')}
+      ${f('gTW', '目标体重（kg）', p.targetWeight, 'type="number" inputmode="decimal" step="0.1"')}
+      ${f('gTD', '目标日期', p.targetDate, `type="date" min="${today()}"`)}
+      ${f('gED', '每周运动天数', p.exDaysGoal, 'type="number" inputmode="numeric" min="1" max="7"')}
+      ${f('gEM', '每天运动分钟', p.exMinGoal, 'type="number" inputmode="numeric" min="5" max="300"')}
+      ${f('gWG', '每天喝水（杯）', p.waterGoal, 'type="number" inputmode="numeric" min="1" max="20"')}
+    </div></section>
+    <section class="card"><div class="card-h"><h2>生理期</h2><span class="muted small">记录两次后会自动按真实周期计算</span></div><div class="form">
+      ${f('gLP', '上次月经开始日', p.lastPeriod, `type="date" max="${today()}"`)}
+      ${f('gCL', '平均周期（天）', p.cycleLen, 'type="number" inputmode="numeric" min="20" max="45"')}
+      ${f('gPL', '经期天数', p.periodLen, 'type="number" inputmode="numeric" min="2" max="10"')}
+    </div></section>
+    <section class="card"><div class="card-h"><h2>监督风格</h2></div>
+      <div class="chips" role="group" aria-label="监督风格">
+        <button type="button" class="chip" data-act="tone" data-v="gentle" aria-pressed="${p.tone !== 'strict'}">温柔鼓励</button>
+        <button type="button" class="chip" data-act="tone" data-v="strict" aria-pressed="${p.tone === 'strict'}">严格督促</button>
+      </div>
+      <p class="small muted" style="margin-top:8px">严格模式下，没完成的事会说得更直接，晚上没运动也会催你。</p></section>
+    <div class="row"><button type="button" class="btn" data-act="saveGoals">保存资料和目标</button></div>
+    <section class="card"><div class="card-h"><h2>备份与恢复</h2></div>
+      <p class="small muted">记录只存在这台手机的这个 App 里。换手机、删掉桌面图标或清除 Safari 数据前，先导出一份备份，存到「文件」或发给自己。安卓版轻盈日记导出的备份也能在这里导入。</p>
+      ${imp ? `<div class="banner" style="margin-top:12px;margin-bottom:0"><span>备份里有 ${imp.count} 天的记录。导入会覆盖手机上现在的全部记录。</span><span class="row"><button type="button" class="btn small danger" data-act="importYes">覆盖导入</button><button type="button" class="btn small ghost" data-act="importNo">取消</button></span></div>` : ''}
+      <div class="row" style="margin-top:12px"><button type="button" class="btn ghost" data-act="export">导出备份</button><button type="button" class="btn ghost" data-act="import">导入备份</button><input type="file" id="impFile" accept=".json,application/json,text/plain" hidden></div></section>`;
+}
+
+/* ---------- events ---------- */
+function updateEst() {
+  const tSel = $('#exT'), mIn = $('#exM'), kIn = $('#exK'); if (!tSel) return null;
+  const met = (EX.find(e => e[0] === tSel.value) || EX[EX.length - 1])[1];
+  const w = latestWeight(S.date) || 55, mins = numOrNull(mIn.value);
+  const est = mins ? Math.round(met * w * mins / 60) : null;
+  kIn.placeholder = est ? `约 ${est}` : 'kcal';
+  $('#exEst').textContent = est ? `按 ${tSel.value} ${mins} 分钟、体重 ${f1(w)} kg 估算，约消耗 ${est} kcal。可以填手环上的数字覆盖。` : '消耗留空会按运动强度和你的体重自动估算。';
+  return est;
+}
+document.addEventListener('input', e => { if (e.target.id === 'exM' || e.target.id === 'exT') updateEst(); });
+document.addEventListener('change', e => {
+  if (e.target.id === 'impFile') {
+    const f = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    if (f.size > 20 * 1024 * 1024) { toast('文件太大，不像是备份文件'); return; }
+    const rd = new FileReader();
+    rd.onload = () => window.onImport(String(rd.result));
+    rd.onerror = () => toast('读取文件失败了');
+    rd.readAsText(f);
+    return;
+  }
+  if (e.target.id === 'exT') updateEst();
+  if (e.target.id === 'noteIn') { const v = e.target.value.slice(0, 2000); if (v !== (day(S.date).note || '')) { S.days = { ...S.days, [S.date]: { ...day(S.date), note: v, date: S.date } }; persist(); } }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'wIn') act('saveW'); else if (e.target.id === 'inIn') act('saveIn'); else if (e.target.id === 'exM' || e.target.id === 'exK') act('addEx');
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act],[data-tab]'); if (!b || b.disabled) return;
+  if (b.dataset.tab && !b.dataset.act) { go(b.dataset.tab); return; }
+  act(b.dataset.act, b);
+});
+function go(view) { S.view = view; S.pendingImport = null; render(); window.scrollTo(0, 0); }
+function act(a, b) {
+  const d = S.date, t = day(d);
+  switch (a) {
+    case 'tab': go(b.dataset.tab); break;
+    case 'prev': S.date = add(d, -1); render(); break;
+    case 'next': if (d < today()) { S.date = add(d, 1); render(); } break;
+    case 'gotoday': S.date = today(); render(); break;
+    case 'saveW': {
+      const v = numOrNull($('#wIn').value);
+      if (v == null || v < 25 || v > 250) { toast('请输入 25–250 之间的体重（kg）'); return; }
+      S.days = { ...S.days, [d]: { ...t, weight: Math.round(v * 10) / 10, date: d } };
+      if (!P().startWeight) S.profile = { ...P(), startWeight: Math.round(v * 10) / 10 };
+      persist(); render(); toast('体重已记录'); break;
+    }
+    case 'addEx': {
+      const m = numOrNull($('#exM').value); if (!m || m <= 0) { toast('先填运动了多少分钟'); return; }
+      const est = updateEst(); const k = numOrNull($('#exK').value) ?? est ?? 0;
+      saveDay(d, { ex: [...(t.ex || []), { t: $('#exT').value, m: Math.round(m), k: Math.round(k) }] });
+      toast(`已添加，消耗约 ${Math.round(k)} kcal`); break;
+    }
+    case 'delEx': { const ex = [...(t.ex || [])]; ex.splice(+b.dataset.i, 1); saveDay(d, { ex }); break; }
+    case 'saveIn': {
+      const raw = $('#inIn').value.trim(); const v = raw === '' ? null : numOrNull(raw);
+      if (raw !== '' && (v == null || v < 0 || v > 8000)) { toast('请输入 0–8000 之间的热量'); return; }
+      saveDay(d, { intake: v == null ? null : Math.round(v) }); toast(v == null ? '已清除摄入' : '摄入已保存'); break;
+    }
+    case 'water': { const n = +b.dataset.n; saveDay(d, { water: (t.water || 0) === n ? n - 1 : n }); break; }
+    case 'flow': saveDay(d, { flow: +b.dataset.v }); break;
+    case 'sym': { const s = new Set(t.sym || []); s.has(b.dataset.v) ? s.delete(b.dataset.v) : s.add(b.dataset.v); saveDay(d, { sym: [...s] }); break; }
+    case 'mood': saveDay(d, { mood: t.mood === b.dataset.v ? null : b.dataset.v }); break;
+    case 'range': S.range = +b.dataset.v; render(); break;
+    case 'calPrev': case 'calNext': { const [y, m] = S.cal.split('-').map(Number); const nd = new Date(y, m - 1 + (a === 'calNext' ? 1 : -1), 1); S.cal = `${nd.getFullYear()}-${pad(nd.getMonth() + 1)}`; render(); break; }
+    case 'calDay': S.date = b.dataset.d; go('today'); break;
+    case 'periodStart': S.date = today(); saveDay(today(), { flow: 2 }); toast('已记录：今天是经期第 1 天'); break;
+    case 'tone': document.querySelectorAll('[data-act="tone"]').forEach(x => x.setAttribute('aria-pressed', x === b)); break;
+    case 'saveGoals': {
+      const g = id => $('#' + id).value.trim();
+      const tone = document.querySelector('[data-act="tone"][aria-pressed="true"]')?.dataset.v || 'gentle';
+      saveProfile({
+        name: g('gName').slice(0, 20), height: numOrNull(g('gH')), age: numOrNull(g('gA')), activity: +g('gAct') || 1.2,
+        startWeight: numOrNull(g('gSW')), targetWeight: numOrNull(g('gTW')), targetDate: g('gTD'),
+        exDaysGoal: numOrNull(g('gED')) || 4, exMinGoal: numOrNull(g('gEM')) || 30, waterGoal: numOrNull(g('gWG')) || 8,
+        lastPeriod: g('gLP'), cycleLen: numOrNull(g('gCL')) || 28, periodLen: numOrNull(g('gPL')) || 5, tone
+      });
+      toast('资料和目标已保存'); break;
+    }
+    case 'saveRem': {
+      S.rem = { morningOn: $('#rMo').checked, morning: $('#rMt').value || '07:30', eveningOn: $('#rEo').checked, evening: $('#rEt').value || '21:00' };
+      try { if (A) A.setReminders(JSON.stringify(S.rem)); else localStorage.setItem('qingying-rem', JSON.stringify(S.rem)); } catch (e) {}
+      const on = [S.rem.morningOn && '早上 ' + S.rem.morning, S.rem.eveningOn && '晚上 ' + S.rem.evening].filter(Boolean);
+      checkNotif(); render(); toast(on.length ? '已设置：' + on.join('、') : '提醒已全部关闭'); break;
+    }
+    case 'testRem': pushStatus(); A?.testReminder(); toast(S.notifOk ? '已发送，看一下通知栏' : '通知被关掉了，先去设置里打开'); break;
+    case 'appSettings': A?.openAppSettings(); break;
+    case 'onboard': {
+      const g = id => $('#' + id).value.trim();
+      const w = numOrNull(g('obW'));
+      if (!numOrNull(g('obH')) || !w) { toast('至少填一下身高和现在的体重'); return; }
+      S.profile = { ...P(), name: g('obName').slice(0, 20), height: numOrNull(g('obH')), age: numOrNull(g('obA')), startWeight: w, targetWeight: numOrNull(g('obT')), lastPeriod: g('obP') };
+      S.days = { ...S.days, [today()]: { ...day(today()), weight: Math.round(w * 10) / 10, date: today() } };
+      persist(); render(); toast('好啦，从今天开始'); break;
+    }
+    case 'export': {
+      const blob = new Blob([JSON.stringify({ app: 'qingying', v: 1, exported: new Date().toISOString(), profile: S.profile, days: S.days })], { type: 'application/json' });
+      const a2 = document.createElement('a');
+      a2.href = URL.createObjectURL(blob); a2.download = `轻盈日记备份-${today()}.json`;
+      document.body.appendChild(a2); a2.click();
+      setTimeout(() => { URL.revokeObjectURL(a2.href); a2.remove(); }, 5000);
+      toast('选「存储到文件」或发给自己保存'); break;
+    }
+    case 'import': $('#impFile').click(); break;
+    case 'hideInstall': S.hideInstall = true; try { localStorage.setItem('qingying-hide-install', '1'); } catch (e) {} render(); break;
+    case 'addCal': {
+      S.rem = { morningOn: $('#rMo').checked, morning: $('#rMt').value || '07:30', eveningOn: $('#rEo').checked, evening: $('#rEt').value || '21:00' };
+      try { localStorage.setItem('qingying-rem', JSON.stringify(S.rem)); } catch (e) {}
+      if (!S.rem.morningOn && !S.rem.eveningOn) { toast('先打开至少一个提醒'); return; }
+      const blob = new Blob([buildIcs(S.rem)], { type: 'text/calendar;charset=utf-8' });
+      const a3 = document.createElement('a');
+      a3.href = URL.createObjectURL(blob); a3.download = '轻盈日记提醒.ics';
+      document.body.appendChild(a3); a3.click();
+      setTimeout(() => { URL.revokeObjectURL(a3.href); a3.remove(); }, 5000);
+      break;
+    }
+    case 'importYes': {
+      const imp = S.pendingImport; if (!imp) return;
+      S.profile = imp.profile; S.days = imp.days; S.pendingImport = null;
+      persist(); render(); toast('已导入备份'); break;
+    }
+    case 'importNo': S.pendingImport = null; render(); break;
+  }
+}
+
+/* ---------- phone hooks ---------- */
+window.onExported = ok => { if (ok === true) toast('备份已保存'); else if (ok === false) toast('备份没有保存成功，换个位置再试'); };
+window.onImport = text => {
+  if (text == null) return;
+  try {
+    const o = JSON.parse(text);
+    if (!o || o.app !== 'qingying' || typeof o.days !== 'object') throw 0;
+    const days = {};
+    for (const [k, v] of Object.entries(o.days)) if (isDate(k) && v && typeof v === 'object') days[k] = { ...v, date: k };
+    S.pendingImport = { profile: o.profile && typeof o.profile === 'object' ? o.profile : null, days, count: Object.keys(days).length };
+    S.view = 'goals'; render();
+  } catch (e) { toast('这不是轻盈日记的备份文件'); }
+};
+window.onAndroidBack = () => {
+  if (S.pendingImport) { S.pendingImport = null; render(); return true; }
+  if (S.view !== 'today') { go('today'); return true; }
+  if (S.date !== today()) { S.date = today(); render(); return true; }
+  return false;
+};
+function checkNotif() { try { S.notifOk = A ? !!A.notifAllowed() : true; } catch (e) { S.notifOk = true; } }
+let lastDay = today();
+window.onAndroidResume = () => {
+  checkNotif();
+  const n = today();
+  if (n !== lastDay) { if (S.date === lastDay) S.date = n; lastDay = n; }
+  pushStatus();
+  const ae = document.activeElement;
+  if (!(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) render();
+};
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.view === 'trend') { drawWeight(); drawExercise(); } }, 150); });
+
+// Daily repeating calendar events with an alarm, in the phone's local time.
+function buildIcs(rem) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+  const ymd = today().replace(/-/g, '');
+  const ev = (key, hm, title, body) => [
+    'BEGIN:VEVENT', `UID:qingying-${key}-${stamp}@qingying.local`, `DTSTAMP:${stamp}`,
+    `DTSTART:${ymd}T${hm.replace(':', '')}00`, 'DURATION:PT5M', 'RRULE:FREQ=DAILY',
+    `SUMMARY:${title}`, `DESCRIPTION:${body}`, 'TRANSP:TRANSPARENT',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${title}`, 'TRIGGER:PT0M', 'END:VALARM', 'END:VEVENT'
+  ];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Qingying Diary//CN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+  if (rem.morningOn) lines.push(...ev('morning', rem.morning, '轻盈日记：空腹称体重', '起床上完厕所、空腹称一次，记到轻盈日记里。'));
+  if (rem.eveningOn) lines.push(...ev('evening', rem.evening, '轻盈日记：睡前打卡', '记一下今天的运动、饮食、喝水和经期。'));
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n') + '\r\n';
+}
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') window.onAndroidResume(); });
+render();
+</script>
+</body>
+</html>
