@@ -258,7 +258,9 @@ const S = {
 
 const P = () => ({ ...DEF, ...(S.profile || {}) });
 const day = d => S.days[d] || { date: d };
-const exMin = t => (t.ex || []).reduce((a, e) => a + (+e.m || 0), 0);
+const exMinManual = t => (t.ex || []).reduce((a, e) => a + (+e.m || 0), 0);
+// Watch exercise minutes already include workouts logged by hand, so take the larger of the two.
+const exMin = t => Math.max(exMinManual(t), +(t.watch && t.watch.ex) || 0);
 const exKcal = t => (t.ex || []).reduce((a, e) => a + (+e.k || 0), 0);
 const logged = t => t.weight != null || exMin(t) > 0 || t.intake != null;
 function latestWeight(upto) {
@@ -273,6 +275,12 @@ function energy(d) {
   const p = P(), t = day(d), w = latestWeight(d), h = numOrNull(p.height), a = numOrNull(p.age);
   const bmr = (w && h && a) ? 10 * w + 6.25 * h - 5 * a - 161 : null;
   const tdee = bmr ? bmr * (+p.activity || 1.2) : null;
+  const wt = t.watch || {};
+  if (wt.active != null) {
+    const resting = wt.resting != null ? wt.resting : bmr;
+    const total = resting != null ? resting + wt.active : null;
+    return { measured: true, bmr, tdee, resting, active: wt.active, ex: wt.active, total, gap: (total != null && t.intake != null) ? total - t.intake : null, intake: t.intake };
+  }
   const ex = exKcal(t);
   const total = tdee != null ? tdee + ex : null;
   const gap = (total != null && t.intake != null) ? total - t.intake : null;
@@ -501,9 +509,15 @@ function vToday() {
     </div>
     <p class="small muted" style="margin-top:8px" id="exEst">消耗留空会按运动强度和你的体重自动估算。</p></section>`;
 
+  const wd = t.watch;
+  html += `<section class="card"><div class="card-h"><h2>Apple Watch</h2><span class="muted small">${wd ? '已导入 ' + esc(wd.at || '') : '用快捷指令导入'}</span></div>
+    ${wd ? `<div class="energy">${wd.active != null ? `<div><div class="k">活动消耗</div><div class="v">${Math.round(wd.active)} <span class="small muted">千卡</span></div></div>` : ''}${wd.resting != null ? `<div><div class="k">静息消耗</div><div class="v">${Math.round(wd.resting)} <span class="small muted">千卡</span></div></div>` : ''}${wd.ex != null ? `<div><div class="k">锻炼</div><div class="v">${Math.round(wd.ex)} <span class="small muted">分钟</span></div></div>` : ''}</div>` : `<p class="small muted">先在「快捷指令」里运行「轻盈日记·手表数据」，再回来点下面的按钮，今天的消耗和锻炼分钟就会填进来。</p>`}
+    <div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="watchPaste">导入手表数据</button>${wd ? '<button type="button" class="btn ghost" data-act="watchClear">清除</button>' : ''}<button type="button" class="linkbtn" data-act="watchHelp">怎么设置快捷指令？</button></div>
+    ${S.watchManual ? `<div style="margin-top:12px"><label class="label" for="watchText">没读到剪贴板，把快捷指令复制的内容粘贴到这里</label><textarea class="in" id="watchText" placeholder="轻盈日记手表数据&#10;活动:568&#10;静息:1610&#10;锻炼:45"></textarea><div class="row" style="margin-top:8px"><button type="button" class="btn" data-act="watchParse">导入</button></div></div>` : ''}</section>`;
+
   const en = energy(d);
   html += `<section class="card"><div class="card-h"><h2>热量消耗</h2><span class="muted small">${en.gap != null ? (en.gap >= 0 ? '缺口 ' : '超出 ') + Math.abs(Math.round(en.gap)) + ' kcal' : ''}</span></div>
-    ${en.bmr ? `<div class="energy">
+    ${en.measured ? watchEnergy(en) : en.bmr ? `<div class="energy">
       <div><div class="k">基础代谢</div><div class="v">${Math.round(en.bmr)}</div></div>
       <div><div class="k">日常消耗（含基础）</div><div class="v">${Math.round(en.tdee)}</div></div>
       <div><div class="k">运动消耗</div><div class="v">${Math.round(en.ex)}</div></div>
@@ -512,7 +526,7 @@ function vToday() {
     <div class="sep"></div>
     <label class="label" for="inIn">饮食摄入（kcal）</label>
     <div class="row"><input class="in grow" id="inIn" type="number" inputmode="numeric" min="0" max="8000" placeholder="例如 1500" value="${t.intake ?? ''}"><button type="button" class="btn" data-act="saveIn">保存</button></div>
-    ${en.bmr ? `<p class="small muted" style="margin-top:8px">建议每天摄入 ${Math.max(1200, Math.round(en.tdee - 500))}–${Math.max(1200, Math.round(en.tdee - 300))} kcal 左右，不要低于 1200。</p>` : ''}</section>`;
+    ${en.bmr ? `<p class="small muted" style="margin-top:8px">建议每天摄入 ${Math.max(1200, Math.round((en.measured && en.total ? en.total : en.tdee) - 500))}–${Math.max(1200, Math.round((en.measured && en.total ? en.total : en.tdee) - 300))} kcal 左右，不要低于 1200。</p>` : ''}</section>`;
 
   const wg = +p.waterGoal || 8, wc = t.water || 0;
   html += `<section class="card"><div class="card-h"><h2>喝水</h2><span class="muted small tnum">${wc} / ${wg} 杯（每杯约 250 ml）</span></div>
@@ -674,6 +688,20 @@ function vGoals() {
       <div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="addCal">添加到 iPhone 日历</button></div>
       <p class="small muted" style="margin-top:10px">点按钮后选「全部添加」，日历每天到点会响铃提醒，断网也有效。改时间的话，先到日历里删掉旧的那组，再点一次。</p>
       <p class="small muted" style="margin-top:6px">点了没反应的话，用默认时间（早 7:30、晚 21:00）：<a href="reminders.ics" style="color:var(--accent)">添加默认提醒</a>。也可以在「提醒事项」App 里自己建，把「重复」设为「每天」。</p></section>
+    <section class="card" id="watchGuide"><div class="card-h"><h2>连接 Apple Watch</h2><span class="muted small">设置一次就好</span></div>
+      <p class="small muted" style="margin-bottom:10px">手表的数据在 iPhone「健康」里。用「快捷指令」把今天的数据复制出来，再在「今天」页点「导入手表数据」。</p>
+      <ol class="small" style="margin:0;padding-left:20px;display:grid;gap:8px;line-height:1.6">
+        <li>打开「快捷指令」App，点右上角「+」，名称改为「轻盈日记·手表数据」。</li>
+        <li>添加操作「查找健康样本」：类型选「活动能量」，加一个条件「开始日期」「是今天」。</li>
+        <li>添加操作「计算统计数据」，选「总和」，输入用上一步的「健康样本」。</li>
+        <li>把第 2、3 步再做两遍：一遍类型换成「静息能量」，一遍换成「锻炼分钟数」。</li>
+        <li>（可选，有智能体重秤时）再加「查找健康样本」：类型「体重」，排序「最新优先」，限制 1 个。</li>
+        <li>添加操作「文本」，先点下面的按钮复制模板粘进去，再把每个「＿」换成对应步骤的结果变量（第一个「总和」、第二个「总和」……）。</li>
+        <li>添加操作「拷贝到剪贴板」，输入选「文本」。</li>
+        <li>点运行。第一次会问能否读取健康数据，选「允许」。然后打开轻盈日记点「导入手表数据」。</li>
+      </ol>
+      <div class="row" style="margin-top:12px"><button type="button" class="btn ghost" data-act="copyTpl">复制文本模板</button></div>
+      <p class="small muted" style="margin-top:10px">想每天自动运行：在「快捷指令」底部点「自动化」→「+」→「特定时间」，选 21:00、每天，选「立即运行」，再选这个快捷指令。之后晚上打开轻盈日记点一下导入就行。</p></section>
     <section class="card"><div class="card-h"><h2>我的资料</h2></div><div class="form">
       ${f('gName', '称呼', p.name, 'placeholder="小雨"')}
       ${f('gH', '身高（cm）', p.height, 'type="number" inputmode="decimal"')}
@@ -812,6 +840,16 @@ function act(a, b) {
       toast('选「存储到文件」或发给自己保存'); break;
     }
     case 'import': $('#impFile').click(); break;
+    case 'watchPaste': importWatchFromClipboard(); break;
+    case 'watchParse': { const r = parseWatch($('#watchText').value); if (r) applyWatch(r); else toast('没找到手表数据，检查一下粘贴的内容'); break; }
+    case 'watchClear': saveDay(d, { watch: null }); toast('已清除这天的手表数据'); break;
+    case 'watchHelp': go('goals'); setTimeout(() => $('#watchGuide')?.scrollIntoView({ block: 'start' }), 50); break;
+    case 'copyTpl': {
+      const tpl = WATCH_TPL;
+      const done = () => toast('模板已复制');
+      try { navigator.clipboard.writeText(tpl).then(done, () => toast('复制失败，请手动输入模板')); } catch (e) { toast('复制失败，请手动输入模板'); }
+      break;
+    }
     case 'hideInstall': S.hideInstall = true; try { localStorage.setItem('qingying-hide-install', '1'); } catch (e) {} render(); break;
     case 'addCal': {
       S.rem = { morningOn: $('#rMo').checked, morning: $('#rMt').value || '07:30', eveningOn: $('#rEo').checked, evening: $('#rEt').value || '21:00' };
@@ -863,6 +901,47 @@ window.onAndroidResume = () => {
   if (!(ae && /INPUT|TEXTAREA|SELECT/.test(ae.tagName))) render();
 };
 let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.view === 'trend') { drawWeight(); drawExercise(); } }, 150); });
+
+const WATCH_TPL = '轻盈日记手表数据\n活动:＿\n静息:＿\n锻炼:＿\n体重:＿';
+// Reads the text the Shortcut copied: lines like "活动:568.3 kcal". Missing or odd values are skipped.
+function parseWatch(text) {
+  const s = String(text || '').replace(/：/g, ':');
+  if (!/活动|静息|锻炼|体重/.test(s)) return null;
+  const num = (label, lo, hi) => {
+    const m = s.match(new RegExp(label + '[^\\d\\n]*([\\d][\\d,]*(?:\\.\\d+)?)'));
+    if (!m) return null;
+    const v = parseFloat(m[1].replace(/,/g, ''));
+    return isFinite(v) && v >= lo && v <= hi ? v : null;
+  };
+  const r = { active: num('活动', 0, 8000), resting: num('静息', 0, 5000), ex: num('锻炼', 0, 1440), weight: num('体重', 25, 250) };
+  return Object.values(r).some(v => v != null) ? r : null;
+}
+function applyWatch(r) {
+  const d = S.date, t = day(d), now = new Date();
+  const watch = { ...(t.watch || {}), at: `${pad(now.getHours())}:${pad(now.getMinutes())}` };
+  ['active', 'resting', 'ex'].forEach(k => { if (r[k] != null) watch[k] = Math.round(r[k]); });
+  const patch = { watch };
+  if (r.weight != null && t.weight == null) patch.weight = Math.round(r.weight * 10) / 10;
+  S.watchManual = false;
+  saveDay(d, patch);
+  const parts = [r.active != null && `活动 ${Math.round(r.active)} 千卡`, r.ex != null && `锻炼 ${Math.round(r.ex)} 分钟`, patch.weight != null && `体重 ${f1(patch.weight)} kg`].filter(Boolean);
+  toast('已导入' + (d === today() ? '' : '到 ' + md(d)) + '：' + (parts.join('、') || '静息消耗'));
+}
+async function importWatchFromClipboard() {
+  try {
+    const r = parseWatch(await navigator.clipboard.readText());
+    if (r) { applyWatch(r); return; }
+    toast('剪贴板里没有手表数据，先运行快捷指令');
+  } catch (e) { toast('没读到剪贴板，可以手动粘贴'); }
+  S.watchManual = true; render();
+}
+function watchEnergy(en) {
+  return `<div class="energy">
+      <div><div class="k">静息消耗</div><div class="v">${en.resting != null ? Math.round(en.resting) : '--'}</div></div>
+      <div><div class="k">活动消耗</div><div class="v">${Math.round(en.active)}</div></div>
+      <div><div class="k">总消耗</div><div class="v" style="color:var(--accent)">${en.total != null ? Math.round(en.total) : '--'}</div></div>
+    </div><p class="small muted" style="margin-top:8px">来自 Apple Watch 实测${en.resting != null && (day(S.date).watch || {}).resting == null ? '（静息消耗按身高体重估算）' : ''}，手动加的运动不会重复计算。</p>`;
+}
 
 // Daily repeating calendar events with an alarm, in the phone's local time.
 function buildIcs(rem) {
