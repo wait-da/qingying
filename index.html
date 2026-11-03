@@ -511,7 +511,7 @@ function vToday() {
 
   const wd = t.watch;
   html += `<section class="card"><div class="card-h"><h2>Apple Watch</h2><span class="muted small">${wd ? '已导入 ' + esc(wd.at || '') : '用快捷指令导入'}</span></div>
-    ${wd ? `<div class="energy">${wd.active != null ? `<div><div class="k">活动消耗</div><div class="v">${Math.round(wd.active)} <span class="small muted">千卡</span></div></div>` : ''}${wd.resting != null ? `<div><div class="k">静息消耗</div><div class="v">${Math.round(wd.resting)} <span class="small muted">千卡</span></div></div>` : ''}${wd.ex != null ? `<div><div class="k">锻炼</div><div class="v">${Math.round(wd.ex)} <span class="small muted">分钟</span></div></div>` : ''}</div>` : `<p class="small muted">先在「快捷指令」里运行「轻盈日记·手表数据」，再回来点下面的按钮，今天的消耗和锻炼分钟就会填进来。</p>`}
+    ${wd ? `<div class="energy">${wd.active != null ? `<div><div class="k">活动消耗</div><div class="v">${Math.round(wd.active)} <span class="small muted">千卡</span></div></div>` : ''}${wd.resting != null ? `<div><div class="k">静息消耗</div><div class="v">${Math.round(wd.resting)} <span class="small muted">千卡</span></div></div>` : ''}${wd.ex != null ? `<div><div class="k">锻炼</div><div class="v">${Math.round(wd.ex)} <span class="small muted">分钟</span></div></div>` : ''}${wd.steps != null ? `<div><div class="k">步数</div><div class="v">${Math.round(wd.steps).toLocaleString('zh-CN')}</div></div>` : ''}${wd.stand != null ? `<div><div class="k">站立</div><div class="v">${Math.round(wd.stand)} <span class="small muted">小时</span></div></div>` : ''}</div>` : `<p class="small muted">先在「快捷指令」里运行「轻盈日记·手表数据」，再回来点下面的按钮，今天的消耗和锻炼分钟就会填进来。</p>`}
     <div class="row" style="margin-top:12px"><button type="button" class="btn" data-act="watchPaste">导入手表数据</button>${wd ? '<button type="button" class="btn ghost" data-act="watchClear">清除</button>' : ''}<button type="button" class="linkbtn" data-act="watchHelp">怎么设置快捷指令？</button></div>
     ${S.watchManual ? `<div style="margin-top:12px"><label class="label" for="watchText">没读到剪贴板，把快捷指令复制的内容粘贴到这里</label><textarea class="in" id="watchText" placeholder="轻盈日记手表数据&#10;活动:568&#10;静息:1610&#10;锻炼:45"></textarea><div class="row" style="margin-top:8px"><button type="button" class="btn" data-act="watchParse">导入</button></div></div>` : ''}</section>`;
 
@@ -692,16 +692,19 @@ function vGoals() {
       <p class="small muted" style="margin-bottom:10px">手表的数据在 iPhone「健康」里。用「快捷指令」把今天的数据复制出来，再在「今天」页点「导入手表数据」。</p>
       <ol class="small" style="margin:0;padding-left:20px;display:grid;gap:8px;line-height:1.6">
         <li>打开「快捷指令」App，点右上角「+」，名称改为「轻盈日记·手表数据」。</li>
-        <li>添加操作「查找健康样本」：类型选「活动能量」，加一个条件「开始日期」「是今天」。</li>
-        <li>添加操作「计算统计数据」，选「总和」，输入用上一步的「健康样本」。</li>
-        <li>把第 2、3 步再做两遍：一遍类型换成「静息能量」，一遍换成「锻炼分钟数」。</li>
-        <li>（可选，有智能体重秤时）再加「查找健康样本」：类型「体重」，排序「最新优先」，限制 1 个。</li>
-        <li>添加操作「文本」，先点下面的按钮复制模板粘进去，再把每个「＿」换成对应步骤的结果变量（第一个「总和」、第二个「总和」……）。</li>
-        <li>添加操作「拷贝到剪贴板」，输入选「文本」。</li>
-        <li>点运行。第一次会问能否读取健康数据，选「允许」。然后打开轻盈日记点「导入手表数据」。</li>
+        <li><b>活动消耗</b>：添加「查找健康样本」，类型选「活动能量」，加条件「开始日期」「是今天」；再添加「计算统计数据」，选「总和」。</li>
+        <li><b>静息消耗、锻炼、步数</b>：把第 2 步再做三遍，类型分别换成「静息能量」「锻炼分钟数」「步数」。</li>
+        <li><b>站立小时</b>：添加「查找健康样本」，类型「站立小时」，条件「开始日期」「是今天」；再添加「计数」操作，计数项选「项目」。</li>
+        <li><b>经期</b>：添加「查找健康样本」，类型「月经」（有的版本叫「月经流量」），条件「开始日期」「是今天」，限制 1 个。</li>
+        <li><b>体重</b>（可选，有智能体重秤时）：「查找健康样本」，类型「体重」，排序「最新优先」，限制 1 个。</li>
+        <li><b>日期</b>：添加「格式化日期」，日期选「当前日期」，日期格式选「自定」，填 <code>yyyy-MM-dd</code>。</li>
+        <li>添加「文本」，点下面的按钮复制模板粘进去，把每个「＿」换成对应步骤的结果（长按「＿」位置插入变量：日期用「格式化的日期」，站立用「计数」，经期和体重用「健康样本」，其他用对应的「总和」）。</li>
+        <li>添加「拷贝到剪贴板」，输入选「文本」。</li>
+        <li>点运行。第一次会问能否读取健康数据，全部「允许」。然后打开轻盈日记，在「今天」页点「导入手表数据」。</li>
       </ol>
       <div class="row" style="margin-top:12px"><button type="button" class="btn ghost" data-act="copyTpl">复制文本模板</button></div>
-      <p class="small muted" style="margin-top:10px">想每天自动运行：在「快捷指令」底部点「自动化」→「+」→「特定时间」，选 21:00、每天，选「立即运行」，再选这个快捷指令。之后晚上打开轻盈日记点一下导入就行。</p></section>
+      <p class="small muted" style="margin-top:10px"><b>让它每天自动运行</b>：在「快捷指令」底部点「自动化」→「+」→「特定时间」，选 23:55、每天，选「立即运行」，再选这个快捷指令。它会在睡前自动把当天完整数据复制好，第二天打开轻盈日记点一下「导入手表数据」，就会存进前一天。白天想看最新的，也可以随时手动运行一次再导入。</p>
+      <p class="small muted" style="margin-top:6px">注意：自动运行后如果你又复制了别的东西，剪贴板会被覆盖，到时手动运行一次快捷指令就好。</p></section>
     <section class="card"><div class="card-h"><h2>我的资料</h2></div><div class="form">
       ${f('gName', '称呼', p.name, 'placeholder="小雨"')}
       ${f('gH', '身高（cm）', p.height, 'type="number" inputmode="decimal"')}
@@ -902,29 +905,42 @@ window.onAndroidResume = () => {
 };
 let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (S.view === 'trend') { drawWeight(); drawExercise(); } }, 150); });
 
-const WATCH_TPL = '轻盈日记手表数据\n活动:＿\n静息:＿\n锻炼:＿\n体重:＿';
+const WATCH_TPL = '轻盈日记手表数据\n日期:＿\n活动:＿\n静息:＿\n锻炼:＿\n步数:＿\n站立:＿\n经期:＿\n体重:＿';
 // Reads the text the Shortcut copied: lines like "活动:568.3 kcal". Missing or odd values are skipped.
 function parseWatch(text) {
   const s = String(text || '').replace(/：/g, ':');
-  if (!/活动|静息|锻炼|体重/.test(s)) return null;
+  if (!/活动|静息|锻炼|步数|站立|体重/.test(s)) return null;
   const num = (label, lo, hi) => {
     const m = s.match(new RegExp(label + '[^\\d\\n]*([\\d][\\d,]*(?:\\.\\d+)?)'));
     if (!m) return null;
     const v = parseFloat(m[1].replace(/,/g, ''));
     return isFinite(v) && v >= lo && v <= hi ? v : null;
   };
-  const r = { active: num('活动', 0, 8000), resting: num('静息', 0, 5000), ex: num('锻炼', 0, 1440), weight: num('体重', 25, 250) };
-  return Object.values(r).some(v => v != null) ? r : null;
+  const r = { active: num('活动', 0, 8000), resting: num('静息', 0, 5000), ex: num('锻炼', 0, 1440), steps: num('步数', 0, 200000), stand: num('站立', 0, 24), weight: num('体重', 25, 250), date: null, flow: null };
+  const dm = s.match(/日期[^\d\n]*(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+  if (dm) { const d = `${dm[1]}-${pad(+dm[2])}-${pad(+dm[3])}`; if (isDate(d) && d <= today()) r.date = d; }
+  const fm = s.match(/经期:([^\n]*)/);
+  if (fm) {
+    const v = fm[1].trim();
+    // Health writes words like 少量/中等/大量/未指定; anything recorded but unspecified counts as medium.
+    if (/多|大|重|heavy/i.test(v)) r.flow = 3;
+    else if (/中|medium/i.test(v)) r.flow = 2;
+    else if (/少|轻|小|light/i.test(v)) r.flow = 1;
+    else if (v && !/无|没有|none|＿/i.test(v)) r.flow = 2;
+  }
+  return ['active', 'resting', 'ex', 'steps', 'stand', 'weight', 'flow'].some(k => r[k] != null) ? r : null;
 }
 function applyWatch(r) {
-  const d = S.date, t = day(d), now = new Date();
+  const d = r.date || S.date, t = day(d), now = new Date();
   const watch = { ...(t.watch || {}), at: `${pad(now.getHours())}:${pad(now.getMinutes())}` };
-  ['active', 'resting', 'ex'].forEach(k => { if (r[k] != null) watch[k] = Math.round(r[k]); });
+  ['active', 'resting', 'ex', 'steps', 'stand'].forEach(k => { if (r[k] != null) watch[k] = Math.round(r[k]); });
   const patch = { watch };
   if (r.weight != null && t.weight == null) patch.weight = Math.round(r.weight * 10) / 10;
+  if (r.flow && !(t.flow > 0)) patch.flow = r.flow;
   S.watchManual = false;
+  S.date = d;
   saveDay(d, patch);
-  const parts = [r.active != null && `活动 ${Math.round(r.active)} 千卡`, r.ex != null && `锻炼 ${Math.round(r.ex)} 分钟`, patch.weight != null && `体重 ${f1(patch.weight)} kg`].filter(Boolean);
+  const parts = [r.active != null && `活动 ${Math.round(r.active)} 千卡`, r.ex != null && `锻炼 ${Math.round(r.ex)} 分钟`, r.steps != null && `${Math.round(r.steps)} 步`, patch.flow && '经期', patch.weight != null && `体重 ${f1(patch.weight)} kg`].filter(Boolean);
   toast('已导入' + (d === today() ? '' : '到 ' + md(d)) + '：' + (parts.join('、') || '静息消耗'));
 }
 async function importWatchFromClipboard() {
